@@ -4,22 +4,13 @@ const request = require('supertest');
 
 const {app} = require ('./../server');
 const {Todo} = require('./../models/todo');
+const {User} = require('./../models/user');
+const {todos, populateTodos, users, populateUsers} = require ('./seed/seed');
 
-const todos = [{
-    _id: new ObjectID(),
-    text: 'First test todo'
-},{
-    _id: new ObjectID(),
-    text: 'Second test todo',
-    completed: true,
-    completedAt: 333
-}];
 
-beforeEach((done) => {
-    Todo.remove({}).then(() => {
-        return Todo.insertMany(todos);        
-    }).then(() => done());    
-});
+
+beforeEach(populateUsers);
+beforeEach(populateTodos);
 
 describe('Post /todos', () => {
   it('should create a new todo', (done) => {
@@ -184,4 +175,71 @@ describe('PATCH /todo/:id', () => {
         })
         .end(done);
     });
+});
+
+
+describe('GET /users/me', () => {
+    it('should return user if authenticated', (done) => {
+        request(app)
+        .get('/users/me')
+        .set('x-auth', users[0].tokens[0].token)
+        .expect(200)
+        .expect((res) => {
+            expect(res.body.email).toBe(users[0].email);
+            expect(res.body._id).toBe(users[0]._id.toHexString());
+        })
+        .end(done);
+    });
+    
+    it('should return 401 if not authenticated', (done) => {
+        request(app)
+        .get('/users/me')
+        .expect(401)
+        .end(done);
+    });
+
+    
+});
+
+describe('POST /users', () => {
+   
+    it('should create a user', (done) => {
+        var email = 'new@example.com';
+        var password = 'newUserPass';
+        
+        request(app)
+        .post('/users')
+        .send({email,password})
+        .expect(200)
+        .expect((res) => {
+            expect(res.body.email).toBe(email);
+            //expect(res.headers['x-auth']).toExist();
+        })
+        .end(done);
+        
+    });
+    
+    it('should return validation errors if request invalid', (done) => {
+        var email = 'notemail';
+        var password = '1';
+        
+        request(app)
+        .post('/users')
+        .send({email,password})
+        .expect(400)
+        .end(done);        
+    });
+    
+    it('should return validation errors if email exists', (done) => {
+        var email = users[0].email;
+        var password = 'newUserPass';
+        
+        request(app)
+        .post('/users')
+        .send({email,password})
+        .expect(400)
+        .end(done);        
+    });
+    
+    
 });
