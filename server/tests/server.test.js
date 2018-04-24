@@ -243,3 +243,32 @@ describe('POST /users', () => {
     
     
 });
+
+describe('POST /users/login', () => {
+   
+    it('should return a user', (done) => {
+        var email = users[0].email;
+        var password = users[0].password;
+        
+        request(app)
+        .post('/users/login')
+        .send({email,password})
+        .expect(200)
+        .expect((res) => {
+            expect(res.body.email).toBe(email);
+        })
+        .end(done);
+    });
+    
+    it('should return validation errors if credentials invalid', (done) => {
+        var email = users[0].email;
+        var password = '1';
+        
+        request(app)
+        .post('/users')
+        .send({email,password})
+        .expect(400)
+        .end(done);        
+    });
+    
+});
